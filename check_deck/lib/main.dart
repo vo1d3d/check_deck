@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -29,14 +31,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final usernameController = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  String incorrectText = "";
 
   void checkLogin() {
     if (usernameController.text.toLowerCase() == "username" &&
         passwordController.text == 'password123') {
       Navigator.push(
           context, MaterialPageRoute(builder: (context) => const SecondPage()));
+      setState(() {
+        incorrectText = "";
+        usernameController.clear();
+        passwordController.clear();
+      });
+    } else {
+      setState(() {
+        incorrectText = "Incorrect Username Or Password";
+      });
     }
   }
 
@@ -71,16 +83,39 @@ class _HomePageState extends State<HomePage> {
               label: 'ENTER USERNAME',
               controller: usernameController,
             ),
+            Text(
+              incorrectText,
+              style: const TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w300,
+                fontSize: 17,
+              ),
+            ),
             InputBox(
               obscure: true,
               label: 'ENTER PASSWORD',
               controller: passwordController,
             ),
-            TextButton(
-              onPressed: () {
-                checkLogin();
-              },
-              child: const Text('LOG IN'),
+            Padding(
+              padding: const EdgeInsets.only(top: 30),
+              child: TextButton(
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(
+                    const Color.fromRGBO(200, 200, 200, 1),
+                  ),
+                ),
+                onPressed: () {
+                  checkLogin();
+                },
+                child: const Text(
+                  'LOG IN',
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w300,
+                      letterSpacing: 4),
+                ),
+              ),
             ),
           ],
         ),
@@ -141,26 +176,25 @@ class SecondPage extends StatefulWidget {
 }
 
 class SecondPageState extends State<SecondPage> {
-  List<String> items = [];
+  Map<Key, List<dynamic>> items = {};
   final newItemController = TextEditingController();
-  bool deleteMode = false;
   bool isEditMode = false;
 
   void _addItem() {
     setState(() {
       if (newItemController.text.isNotEmpty) {
-        items.add(newItemController.text);
+        items[UniqueKey()] = [newItemController.text, false];
         newItemController.clear();
       }
     });
   }
 
-  void removeItem(String item) {
-    setState(
-      () {
-        items.remove(item); // DOES NOT WORK (TBC)
-      },
-    );
+  void _removeItem(Key itemID) {
+    setState(() => items.remove(itemID));
+  }
+
+  void _switchItem(Key itemID) {
+    setState(() => items[itemID] = [items[itemID]![0], !items[itemID]![1]]);
   }
 
   @override
@@ -196,69 +230,54 @@ class SecondPageState extends State<SecondPage> {
               ),
             ),
           ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                items = [];
-              });
-            },
-            child: const Padding(
-              padding: EdgeInsets.only(top: 20),
-              child: Text(
+          Padding(
+            padding: const EdgeInsets.only(top: 15),
+            child: TextButton(
+              onPressed: () => setState(() => items = {}),
+              child: const Text(
                 'RESET LIST',
+                style: TextStyle(color: Colors.black),
               ),
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HomePage(
-                    title: 'Flutter Practice',
-                  ),
-                ),
-              );
-            },
-            child: const Text('LOG OUT'),
+            onPressed: () => Navigator.pop(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const HomePage(title: 'Flutter Practice'),
+              ),
+            ),
+            child: const Text(
+              'LOG OUT',
+              style: TextStyle(color: Colors.black),
+            ),
           ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                isEditMode = !isEditMode;
-              });
-            },
-            child: const Text('MANAGE ITEMS'),
-          ),
-          for (var item in items)
+          for (var item in items.entries)
             CrossOutText(
-              label: item.toUpperCase(),
+              ID: item.key,
+              label: item.value[0],
               color: isEditMode ? Colors.red : Colors.black,
-              items: items,
+              isChecked: item.value[1],
             ),
           Row(
             children: [
               TextButton(
                 onPressed: _addItem,
                 style: TextButton.styleFrom(
-                  minimumSize: Size.zero,
                   padding: const EdgeInsets.all(20),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   backgroundColor: Colors.transparent,
                   splashFactory: NoSplash.splashFactory,
                 ),
                 child: const Text(
+                  '+',
                   style: TextStyle(
                       color: Colors.black,
                       fontSize: 50,
                       fontWeight: FontWeight.w300),
-                  '+',
                 ),
               ),
-              InputBox(
-                label: 'NEW ITEM',
-                controller: newItemController,
-              ),
+              InputBox(label: 'NEW ITEM', controller: newItemController),
             ],
           )
         ],
@@ -270,20 +289,23 @@ class SecondPageState extends State<SecondPage> {
 class CrossOutText extends StatefulWidget {
   final String label;
   final Color color;
-  final List<String> items;
-  const CrossOutText({
-    Key? key,
-    required this.label,
-    this.color = Colors.black,
-    required this.items,
-  }) : super(key: key);
+  final bool isChecked;
+  final Key ID;
+
+  const CrossOutText(
+      {Key? key,
+      required this.label,
+      required this.ID,
+      this.color = const Color.fromARGB(255, 0, 0, 0),
+      required this.isChecked})
+      : super(key: key);
   @override
+  // ignore: library_private_types_in_public_api
   _CrossOutTextState createState() => _CrossOutTextState();
 }
 
 class _CrossOutTextState extends State<CrossOutText>
     with TickerProviderStateMixin {
-  bool isChecked = false;
   late AnimationController controller;
   late Animation animation;
 
@@ -291,11 +313,21 @@ class _CrossOutTextState extends State<CrossOutText>
   void initState() {
     super.initState();
     controller = AnimationController(
-        duration: const Duration(milliseconds: 750), vsync: this);
-    animation = Tween(begin: 0.0, end: 1.0)
-        .animate(CurvedAnimation(parent: controller, curve: Curves.easeOut))
-      ..addListener(() => setState(() {}));
+        duration: const Duration(milliseconds: 500), vsync: this);
+    animation = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: controller, curve: Curves.easeOut),
+    )..addListener(() => setState(() {}));
     controller.forward(from: 0.0);
+  }
+
+  void removeItem() {
+    final state = context.findAncestorStateOfType<SecondPageState>();
+    state?._removeItem(widget.ID);
+  }
+
+  void switchItem() {
+    final state = context.findAncestorStateOfType<SecondPageState>();
+    state?._switchItem(widget.ID);
   }
 
   @override
@@ -305,42 +337,52 @@ class _CrossOutTextState extends State<CrossOutText>
   }
 
   @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: () => setState(() {
-          if (widget.color == Colors.red) {
-            SecondPageState().removeItem(widget.label);
-          } else {
-            isChecked = !isChecked;
-            controller.forward(from: 0.0);
-          }
-        }),
-        splashFactory: NoSplash.splashFactory,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          child: Stack(
-            children: <Widget>[
-              Text(widget.label,
+  Widget build(BuildContext context) => Dismissible(
+        onDismissed: (direction) {
+          setState(() {
+            removeItem();
+          });
+        },
+        key: widget.ID,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              switchItem();
+              controller.forward(from: 0.0);
+            });
+          },
+          splashFactory: NoSplash.splashFactory,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Stack(
+              children: <Widget>[
+                Text(
+                  widget.label,
                   style: TextStyle(
                       color: widget.color,
                       fontSize: 20,
                       letterSpacing: 1,
-                      fontWeight: FontWeight.w300)),
-              Container(
-                transform: Matrix4.identity()..scale(animation.value, 1),
-                child: Text(widget.label,
+                      fontWeight: FontWeight.w300),
+                ),
+                Container(
+                  transform: Matrix4.identity()..scale(animation.value, 1),
+                  child: Text(
+                    widget.label,
                     style: TextStyle(
                       color: Colors.transparent,
                       decorationColor: widget.color,
                       decorationStyle: TextDecorationStyle.solid,
-                      decoration: isChecked
+                      decoration: widget.isChecked
                           ? TextDecoration.lineThrough
                           : TextDecoration.none,
                       fontSize: 20,
                       letterSpacing: 1,
                       fontWeight: FontWeight.w300,
-                    )),
-              ),
-            ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
