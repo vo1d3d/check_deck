@@ -1,45 +1,48 @@
 // ignore_for_file: non_constant_identifier_names
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 
-import 'package:flutter/material.dart';
+String password = "password123";
 
 void main() {
   runApp(const App());
 }
 
+// ----------------
+// ** LOGIN PAGE **
+// ----------------
+
 class App extends StatelessWidget {
   const App({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Practice',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomePage(title: 'Flutter Practice'),
+      home: const LoginPage(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.title});
-  final String title;
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _LoginPageState extends State<LoginPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   String incorrectText = "";
 
   void checkLogin() {
     if (usernameController.text.toLowerCase() == "username" &&
-        passwordController.text == 'password123') {
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => const SecondPage()));
+        passwordController.text == password) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const CheckListPage()));
       setState(() {
         incorrectText = "";
         usernameController.clear();
@@ -50,6 +53,15 @@ class _HomePageState extends State<HomePage> {
         incorrectText = "Incorrect Username Or Password";
       });
     }
+  }
+
+  void forgotPass() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ResetPassPage(),
+      ),
+    );
   }
 
   @override
@@ -70,7 +82,7 @@ class _HomePageState extends State<HomePage> {
             const Padding(
               padding: EdgeInsets.all(20),
               child: Text(
-                'CHECK\nDECK',
+                "CHECK\nDECK",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 22,
@@ -80,7 +92,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             InputBox(
-              label: 'ENTER USERNAME',
+              label: "ENTER USERNAME",
               controller: usernameController,
             ),
             Text(
@@ -93,30 +105,16 @@ class _HomePageState extends State<HomePage> {
             ),
             InputBox(
               obscure: true,
-              label: 'ENTER PASSWORD',
+              label: "ENTER PASSWORD",
               controller: passwordController,
             ),
             Padding(
-              padding: const EdgeInsets.only(top: 30),
-              child: TextButton(
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(
-                    const Color.fromRGBO(200, 200, 200, 1),
-                  ),
-                ),
-                onPressed: () {
-                  checkLogin();
-                },
-                child: const Text(
-                  'LOG IN',
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: 4),
-                ),
-              ),
+              padding: const EdgeInsets.only(top: 20, bottom: 50),
+              child:
+                  ButtonPreset(buttonText: "LOG IN", pressFunction: checkLogin),
             ),
+            ButtonPreset(
+                buttonText: "FORGOT PASSWORD", pressFunction: forgotPass),
           ],
         ),
       ),
@@ -124,65 +122,24 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class InputBox extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-  final bool obscure;
+// ---------------
+// ** LIST PAGE **
+// ---------------
 
-  const InputBox({
-    Key? key,
-    required this.label,
-    required this.controller,
-    this.obscure = false,
-  }) : super(key: key);
+class CheckListPage extends StatefulWidget {
+  const CheckListPage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-        width: MediaQuery.of(context).size.width * 0.8,
-        child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: TextField(
-              obscureText: obscure,
-              controller: controller,
-              style: const TextStyle(
-                backgroundColor: Color.fromRGBO(235, 235, 235, 1),
-                fontSize: 20,
-                fontWeight: FontWeight.w300,
-              ),
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color.fromRGBO(235, 235, 235, 1),
-                hintText: label,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-                hintStyle: const TextStyle(
-                    color: Color.fromRGBO(153, 153, 153, 1), fontSize: 20),
-                border: const OutlineInputBorder(
-                  borderSide: BorderSide(width: 2.0),
-                  borderRadius: BorderRadius.zero,
-                ),
-              ),
-            )));
-  }
+  CheckListPageState createState() => CheckListPageState();
 }
 
-class SecondPage extends StatefulWidget {
-  const SecondPage({Key? key}) : super(key: key);
-
-  @override
-  SecondPageState createState() => SecondPageState();
-}
-
-class SecondPageState extends State<SecondPage> {
+class CheckListPageState extends State<CheckListPage> {
   Map<Key, List<dynamic>> items = {};
   final newItemController = TextEditingController();
-  bool isEditMode = false;
 
   void _addItem() {
     setState(() {
-      if (newItemController.text.isNotEmpty) {
+      if (newItemController.text.trim().isNotEmpty) {
         items[UniqueKey()] = [newItemController.text, false];
         newItemController.clear();
       }
@@ -197,66 +154,35 @@ class SecondPageState extends State<SecondPage> {
     setState(() => items[itemID] = [items[itemID]![0], !items[itemID]![1]]);
   }
 
+  void _resetList() {
+    setState(
+      () => items = {},
+    );
+  }
+
+  void _logOut() {
+    Navigator.pop(
+      context,
+      const LoginPage(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: ListView(
         children: <Widget>[
-          Container(
-            width: double.infinity,
-            height: 70,
-            decoration: BoxDecoration(
-              color: const Color.fromRGBO(217, 217, 217, 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
-                  spreadRadius: 1.5,
-                  blurRadius: 3,
-                  offset: const Offset(0, 1.5),
-                ),
-              ],
-            ),
-            child: const Padding(
-              padding: EdgeInsets.all(10),
-              child: Text(
-                'CHECK\nDECK',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 22,
-                  letterSpacing: 15,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ),
-          ),
+          const SafeArea(child: HeaderTitle()),
           Padding(
-            padding: const EdgeInsets.only(top: 15),
-            child: TextButton(
-              onPressed: () => setState(() => items = {}),
-              child: const Text(
-                'RESET LIST',
-                style: TextStyle(color: Colors.black),
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const HomePage(title: 'Flutter Practice'),
-              ),
-            ),
-            child: const Text(
-              'LOG OUT',
-              style: TextStyle(color: Colors.black),
-            ),
-          ),
+              padding: const EdgeInsets.only(top: 15, bottom: 5),
+              child: ButtonPreset(
+                  buttonText: "RESET LIST", pressFunction: _resetList)),
+          ButtonPreset(buttonText: "LOG OUT", pressFunction: _logOut),
           for (var item in items.entries)
             CrossOutText(
               ID: item.key,
               label: item.value[0],
-              color: isEditMode ? Colors.red : Colors.black,
               isChecked: item.value[1],
             ),
           Row(
@@ -270,14 +196,14 @@ class SecondPageState extends State<SecondPage> {
                   splashFactory: NoSplash.splashFactory,
                 ),
                 child: const Text(
-                  '+',
+                  "+",
                   style: TextStyle(
                       color: Colors.black,
                       fontSize: 50,
                       fontWeight: FontWeight.w300),
                 ),
               ),
-              InputBox(label: 'NEW ITEM', controller: newItemController),
+              InputBox(label: "NEW ITEM", controller: newItemController),
             ],
           )
         ],
@@ -286,9 +212,228 @@ class SecondPageState extends State<SecondPage> {
   }
 }
 
+// -------------------------
+// ** RESET PASSWORD PAGE **
+// -------------------------
+
+class ResetPassPage extends StatefulWidget {
+  const ResetPassPage({Key? key}) : super(key: key);
+
+  @override
+  ResetPassPageState createState() => ResetPassPageState();
+}
+
+class ResetPassPageState extends State<ResetPassPage> {
+  final emailController = TextEditingController();
+  final codeController = TextEditingController();
+  String sentEmail = "";
+  String codeResult = "";
+  String resetInputText = "EMAIL";
+  String resetButtonText = "SEND EMAIL";
+
+  void returnLogin() {
+    Navigator.pop(
+      context,
+      const LoginPage(),
+    );
+  }
+
+  void sendEmail() {
+    setState(() {
+      if (resetButtonText == "SEND EMAIL") {
+        if (RegExp(
+                r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+            .hasMatch(emailController.text)) {
+          sentEmail = "Code emailed to ${emailController.text}";
+        } else {
+          sentEmail = "${emailController.text} is an invalid email";
+        }
+      } else {
+        password = emailController.text;
+        sentEmail = "New password set";
+      }
+    });
+  }
+
+  void submitCode(code) {
+    setState(() {
+      if (code == "12345") {
+        emailController.clear();
+        codeResult = "Enter your new password above";
+        resetButtonText = "RESET PASSWORD";
+        resetInputText = "NEW PASSWORD";
+        sentEmail = "";
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      body: Center(
+        child: Column(
+          children: <Widget>[
+            const SafeArea(child: HeaderTitle()),
+            Padding(
+                padding: const EdgeInsets.symmetric(vertical: 35),
+                child: ButtonPreset(
+                  buttonText: "RETURN TO LOG IN",
+                  pressFunction: returnLogin,
+                )),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                "PASSWORD RESET",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: 3),
+              ),
+            ),
+            InputBox(label: resetInputText, controller: emailController),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              child: ButtonPreset(
+                  buttonText: resetButtonText, pressFunction: sendEmail),
+            ),
+            Text(
+              sentEmail,
+              style: const TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w300,
+                fontSize: 17,
+              ),
+            ),
+            InputBox(
+              label: "CODE",
+              controller: codeController,
+              onChange: submitCode,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------
+// ** EXTRACTED WIDGETS **
+// -----------------------
+
+// TextButton Preset
+class ButtonPreset extends StatelessWidget {
+  const ButtonPreset({
+    super.key,
+    required this.buttonText,
+    required this.pressFunction,
+  });
+
+  final String buttonText;
+  final void Function() pressFunction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: TextButton(
+        style: ButtonStyle(
+          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+            const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.zero),
+            ),
+          ),
+          backgroundColor: MaterialStateProperty.all<Color>(
+            const Color.fromRGBO(236, 236, 236, 1),
+          ),
+        ),
+        onPressed: pressFunction,
+        child: Text(
+          buttonText,
+          style: const TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 4),
+        ),
+      ),
+    );
+  }
+}
+
+// InputBox Preset
+class InputBox extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final bool obscure;
+  final void Function(String)? onChange;
+
+  filler() {}
+
+  const InputBox({
+    Key? key,
+    required this.label,
+    required this.controller,
+    this.obscure = false,
+    this.onChange,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.8,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: TextField(
+          onChanged: onChange,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(
+              RegExp(r"[ -~]"), // ASCII characters from 32 to 126
+            ),
+          ],
+          obscureText: obscure,
+          controller: controller,
+          style: const TextStyle(
+            backgroundColor: Color.fromRGBO(235, 235, 235, 1),
+            fontSize: 20,
+            fontWeight: FontWeight.w300,
+          ),
+          textAlign: TextAlign.center,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color.fromRGBO(235, 235, 235, 1),
+            hintText: label,
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+            hintStyle: const TextStyle(
+                color: Color.fromRGBO(153, 153, 153, 1), fontSize: 20),
+            border: const OutlineInputBorder(
+              borderSide: BorderSide(width: 2.0),
+              borderRadius: BorderRadius.zero,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// CROSS-OUT LIST ITEM
 class CrossOutText extends StatefulWidget {
   final String label;
-  final Color color;
   final bool isChecked;
   final Key ID;
 
@@ -296,7 +441,6 @@ class CrossOutText extends StatefulWidget {
       {Key? key,
       required this.label,
       required this.ID,
-      this.color = const Color.fromARGB(255, 0, 0, 0),
       required this.isChecked})
       : super(key: key);
   @override
@@ -321,12 +465,12 @@ class _CrossOutTextState extends State<CrossOutText>
   }
 
   void removeItem() {
-    final state = context.findAncestorStateOfType<SecondPageState>();
+    final state = context.findAncestorStateOfType<CheckListPageState>();
     state?._removeItem(widget.ID);
   }
 
   void switchItem() {
-    final state = context.findAncestorStateOfType<SecondPageState>();
+    final state = context.findAncestorStateOfType<CheckListPageState>();
     state?._switchItem(widget.ID);
   }
 
@@ -339,17 +483,21 @@ class _CrossOutTextState extends State<CrossOutText>
   @override
   Widget build(BuildContext context) => Dismissible(
         onDismissed: (direction) {
-          setState(() {
-            removeItem();
-          });
+          setState(
+            () {
+              removeItem();
+            },
+          );
         },
         key: widget.ID,
         child: InkWell(
           onTap: () {
-            setState(() {
-              switchItem();
-              controller.forward(from: 0.0);
-            });
+            setState(
+              () {
+                switchItem();
+                controller.forward(from: 0.0);
+              },
+            );
           },
           splashFactory: NoSplash.splashFactory,
           child: Container(
@@ -358,8 +506,8 @@ class _CrossOutTextState extends State<CrossOutText>
               children: <Widget>[
                 Text(
                   widget.label,
-                  style: TextStyle(
-                      color: widget.color,
+                  style: const TextStyle(
+                      color: Colors.black,
                       fontSize: 20,
                       letterSpacing: 1,
                       fontWeight: FontWeight.w300),
@@ -370,7 +518,7 @@ class _CrossOutTextState extends State<CrossOutText>
                     widget.label,
                     style: TextStyle(
                       color: Colors.transparent,
-                      decorationColor: widget.color,
+                      decorationColor: Colors.black,
                       decorationStyle: TextDecorationStyle.solid,
                       decoration: widget.isChecked
                           ? TextDecoration.lineThrough
@@ -386,4 +534,42 @@ class _CrossOutTextState extends State<CrossOutText>
           ),
         ),
       );
+}
+
+// NON-LOGIN HEADER (TOP OF SCREEN)
+class HeaderTitle extends StatelessWidget {
+  const HeaderTitle({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 70,
+      decoration: BoxDecoration(
+        color: const Color.fromRGBO(217, 217, 217, 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            spreadRadius: 1.5,
+            blurRadius: 3,
+            offset: const Offset(0, 1.5),
+          ),
+        ],
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(10),
+        child: Text(
+          "CHECK\nDECK",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 22,
+            letterSpacing: 15,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
 }
